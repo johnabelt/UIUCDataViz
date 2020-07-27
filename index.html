@@ -10,20 +10,21 @@
 
 <body>
     <div class="container-md">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2">S&P 500: A History of the US Economy</p>
         </div>
         <div class="row">
             <div class="col-md-3 border-right bg-light">
-                <h2 class = "h3">1957:</h2>
+                <h2 class="h3">1957:</h2>
                 <p>Title 2</p>
             </div>
-            <div class="col-md-9"> 
-            </div>    
+            <div class="col-md-9" id="my_dataviz">
+            </div>
         </div>
-          
+
     </div>
-    
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
@@ -33,6 +34,95 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
         crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore.js">
+    </script>
+    <script>
+        var margin = { top: 10, right: 10, bottom: 10, left: 10 },
+            width = 800 - margin.left - margin.right,
+            height = 445 - margin.top - margin.bottom;
+
+        const x = d3.scaleLinear().rangeRound([0, width]);
+        const y = d3.scaleLinear().rangeRound([0, height]);
+        const color = d3.scaleOrdinal(d3.schemeCategory10).domain(["Communication",
+            , "Consumer Discretionary"
+            , "Consumer Staples"
+            , "Energy"
+            , "Financials"
+            , "Health Care"
+            , "Industrials"
+            , "Information Technology"
+            , "Materials"
+            , "Real Estate"
+            , "Utilities"
+            , "Rails"
+            , "Transportation"])
+
+        // append the svg object to the body of the page
+        var grandparent = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")")
+            .attr("class", "grandparent");
+
+        data = init(1957)
+        async function init(year) {
+            data = await d3.csv('./data/CompanyDetail.csv')
+            console.log(data)
+            dataStrat = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
+            const root = treemap(dataStrat);
+            console.log(root)
+            svg = d3.select('svg')
+
+            const leaf = grandparent.selectAll("g")
+                .data(root.children)
+                .enter()
+                .append("g")
+                .attr("transform", d => `translate(${d.x0},${d.y0})`);
+            cells = leaf.append("rect")
+                .attr("fill-opacity", 0.6)
+                .attr("x", d => d.x0 * width)
+                .attr("y", d => d.y0 * height)
+                .attr("width", d => (d.x1 - d.x0) * width)
+                .attr("height", d => (d.y1 - d.y0) * height)
+                .attr("fill", d => color(d.data.id))
+
+            leaf.append("text")
+                .attr("x", d => (d.x0 + (d.x1 - d.x0)/8 )* width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0)/2 )* height)
+                .text(d => typeof d.children !== 'undefined'? d.data.id: "")
+                .style("fill", "black")
+                .attr("font-size", "12px")
+            leaf.append("text")
+                .attr("x", d => (d.x0 + (d.x1 - d.x0)/8 )* width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0)/2 )* height + 16)
+                .text(d => typeof d.children !== 'undefined'? Math.floor(d.value)+ "%": "")
+                .style("fill", "black")
+                .attr("font-size", "12px")
+                
+
+            return data
+
+        }
+        console.log(data)
+        var stratify = d3.stratify()
+            .parentId(function (d) {
+                return d.Parent;
+            })
+            .id(function (d) {
+                return d.Id;
+            });
+
+        treemap = data => d3.treemap()
+            (d3.hierarchy(data)
+                .sum(d => parseFloat(d.data.AdjWeight))
+                .sort((a, b) => b.value - a.value))
+
+
+    </script>
 </body>
 
 </html>
