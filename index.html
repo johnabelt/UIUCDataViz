@@ -12,12 +12,18 @@
     <div class="container-md">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2">S&P 500: A History of the US Economy</p>
+            <h1 class="h1">S&P 500: A History of the US Economy</p>
         </div>
         <div class="row">
             <div class="col-md-3 border-right bg-light">
-                <h2 class="h3">1957:</h2>
-                <p>Title 2</p>
+                <h2 class="h2" id="year-title">1957: Inception</h2>
+                <p>
+                    <br> The index was expanded to its current 500 companies and was renamed the S&P 500 Stock Composite Index</br> 
+                    <br> The initial list only included three industries: Industrials, Utilities, and Rails<br>
+                    <br> The largest company at the time was Standard Oil of New Jersey with an $11B Market Cap</br>
+                </p>
+                <p></p>
+                <button>Next: 1976</button>
             </div>
             <div class="col-md-9" id="my_dataviz">
             </div>
@@ -44,7 +50,7 @@
 
         const x = d3.scaleLinear().rangeRound([0, width]);
         const y = d3.scaleLinear().rangeRound([0, height]);
-        const color = d3.scaleOrdinal(d3.schemeCategory10).domain(["Communication",
+        const color = d3.scaleOrdinal().domain(["Communication",
             , "Consumer Discretionary"
             , "Consumer Staples"
             , "Energy"
@@ -56,7 +62,15 @@
             , "Real Estate"
             , "Utilities"
             , "Rails"
-            , "Transportation"])
+            , "Transportation"]).range([
+                "#1f77b4", "#aec7e8",
+                "#ff7f0e", "#ffbb78",
+                "#2ca02c", "#98df8a",
+                "#d62728", "#ff9896",
+                "#9467bd", "#c5b0d5",
+                "#8c564b", "#c49c94",
+                "#e377c2"
+            ])
 
         // append the svg object to the body of the page
         var grandparent = d3.select("#my_dataviz")
@@ -67,15 +81,24 @@
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")")
             .attr("class", "grandparent");
-
+        
         data = init(1957)
+        main()
+
+        async function main(){
+            await sleep(2000)
+            changeYear('2018', data)
+            await sleep(2000)
+            changeYear('2008', data)
+        }
+        
+
         async function init(year) {
             data = await d3.csv('./data/CompanyDetail.csv')
             console.log(data)
             dataStrat = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
-            const root = treemap(dataStrat);
+            var root = treemap(dataStrat);
             console.log(root)
-            svg = d3.select('svg')
 
             const leaf = grandparent.selectAll("g")
                 .data(root.children)
@@ -91,22 +114,76 @@
                 .attr("fill", d => color(d.data.id))
 
             leaf.append("text")
-                .attr("x", d => (d.x0 + (d.x1 - d.x0)/8 )* width)
-                .attr("y", d => (d.y0 + (d.y1 - d.y0)/2 )* height)
-                .text(d => typeof d.children !== 'undefined'? d.data.id: "")
+                .attr("class", "name")
+                .attr("x", d => (d.x0 + (d.x1 - d.x0) / 8) * width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0) / 2) * height)
+                .text(d => d.data.id)
+                .attr("display", d => typeof d.children !== 'undefined' ? "inline" : "none")
                 .style("fill", "black")
                 .attr("font-size", "12px")
             leaf.append("text")
-                .attr("x", d => (d.x0 + (d.x1 - d.x0)/8 )* width)
-                .attr("y", d => (d.y0 + (d.y1 - d.y0)/2 )* height + 16)
-                .text(d => typeof d.children !== 'undefined'? Math.floor(d.value)+ "%": "")
+                .attr("class", "percent")
+                .attr("x", d => (d.x0 + (d.x1 - d.x0) / 8) * width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0) / 2) * height + 16)
+                .attr("display", d => typeof d.children !== 'undefined' ? "inline" : "none")
+                .text(d => Math.floor(d.value) + "%")
                 .style("fill", "black")
                 .attr("font-size", "12px")
-                
 
             return data
 
         }
+
+        async function changeYear(year, data) {
+            //data.then(function(data){
+            console.log(data)
+            const dataStrat2 = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
+            const root2 = treemap(dataStrat2);
+            console.log(root2)
+            console.log("hey")
+            //grandparent.selectAll("g")
+            //    .data(root2.children)
+            //    .exit()
+            var rects = grandparent.selectAll("rect")
+                .data(root2.children)
+                .transition().duration(2000)
+                .attr("fill-opacity", 0.6)
+                .attr("x", d => d.x0 * width)
+                .attr("y", d => d.y0 * height)
+                .attr("width", d => (d.x1 - d.x0) * width)
+                .attr("height", d => (d.y1 - d.y0) * height)
+                .attr("fill", d => color(d.data.id))
+
+
+
+            grandparent.selectAll(".name")
+                .data(root2.children)
+                .transition().duration(2000)
+                .attr("x", d => (d.x0 + (d.x1 - d.x0) / 8) * width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0) / 2) * height)
+                .text(d => d.data.id)
+                .attr("display", d => typeof d.children !== 'undefined' ? "inline" : "none")
+                .style("fill", "black")
+                .attr("font-size", "12px")
+
+            grandparent.selectAll(".percent")
+                .data(root2.children)
+                .transition().duration(2000)
+                .attr("class", "percent")
+                .attr("x", d => (d.x0 + (d.x1 - d.x0) / 8) * width)
+                .attr("y", d => (d.y0 + (d.y1 - d.y0) / 2) * height + 16)
+                .attr("display", d => typeof d.children !== 'undefined' ? "inline" : "none")
+                .text(d => Math.floor(d.value) + "%")
+                .style("fill", "black")
+                .attr("font-size", "12px")
+            //})
+            
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
         console.log(data)
         var stratify = d3.stratify()
             .parentId(function (d) {
@@ -119,7 +196,7 @@
         treemap = data => d3.treemap()
             (d3.hierarchy(data)
                 .sum(d => parseFloat(d.data.AdjWeight))
-                .sort((a, b) => b.value - a.value))
+                .sort((a, b) => b.id - a.id))
 
 
     </script>
