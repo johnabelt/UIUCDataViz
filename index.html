@@ -139,7 +139,7 @@
         var yearData = data.then( d =>  {return d.filter(d2 => d2.Year == document.getElementById("currYear").textContent).sort((a, b) => a.AbjWeight - b.AdjWeight)})
 
         async function init(year) {
-            data = await d3.csv('./data/CompanyDetail.csv')
+            data = await d3.csv('https://raw.githubusercontent.com/johnabelt/UIUCDataViz/master/data/CompanyDetail.csv')
             console.log(data)
             dataStrat = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
             var root = treemap(dataStrat);
@@ -258,7 +258,7 @@
         }
 
         async function updateText() {
-            textData = await d3.csv('./data/yearText.csv')
+            textData = await d3.csv('https://raw.githubusercontent.com/johnabelt/UIUCDataViz/master/data/yearText.csv')
             d3.select('#yearContent')
                 .selectAll("div").remove()
             d3.select('#yearContent')
