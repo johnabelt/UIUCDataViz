@@ -9,28 +9,69 @@
 </head>
 
 <body>
+
     <div class="container-md">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h1">S&P 500: A History of the US Economy</p>
         </div>
         <div class="row">
-            <div class="col-md-3 border-right bg-light">
-                <h2 class="h2" id="year-title">1957: Inception</h2>
-                <p>
-                    <br> The index was expanded to its current 500 companies and was renamed the S&P 500 Stock Composite Index</br> 
-                    <br> The initial list only included three industries: Industrials, Utilities, and Rails<br>
-                    <br> The largest company at the time was Standard Oil of New Jersey with an $11B Market Cap</br>
-                </p>
+            <div class="col-lg-3 border-right bg-light flex-column d-flex">
+                <h2 class="h2" id="year-title"><text id='currYear'>1957</text></h2>
+                <div id="yearContent">
+
+                </div>
                 <p></p>
-                <button>Next: 1976</button>
+                <button class="btn btn-block btn-lg btn-primary mt-auto" id="nextYear"
+                    onclick="incrementAndSetYear()"><text>Next: </text><text id="nextYear">1976</text></button>
             </div>
-            <div class="col-md-9" id="my_dataviz">
+            <div class="col-lg-9">
+                <div id="tooltip" class="hidden">
+                    <p><strong>Top 10 Companies</strong></p>
+                    <ul id="companyTable"></ul>
+                </div>
+                <div id="my_dataviz">
+
+                </div>
+                <div class="col-lg">
+                    <div id="slider-time"></div>
+                </div>
             </div>
         </div>
 
     </div>
+    <style type="text/css">
+        rect:hover {
+            fill: orange;
+        }
 
+        #tooltip {
+            position: absolute;
+            width: 200px;
+            height: auto;
+            padding: 10px;
+            background-color: white;
+            -webkit-border-radius: 10px;
+            -moz-border-radius: 10px;
+            border-radius: 10px;
+            -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        #tooltip.hidden {
+            display: none;
+        }
+
+        #tooltip p {
+            margin: 0;
+            font-family: Futura;
+            font-size: 16px;
+            line-height: 20px;
+        }
+    </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
@@ -43,10 +84,16 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore.js">
     </script>
+    <script src="https://unpkg.com/d3-simple-slider"></script>
     <script>
+
+        var years = ['1957', '1976', '2001', '2008', '2008', '2009']
+        var currYear = years[0]
+        var isFinalSlide = false
+
         var margin = { top: 10, right: 10, bottom: 10, left: 10 },
-            width = 800 - margin.left - margin.right,
-            height = 445 - margin.top - margin.bottom;
+            width = document.getElementById("my_dataviz").clientWidth - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
 
         const x = d3.scaleLinear().rangeRound([0, width]);
         const y = d3.scaleLinear().rangeRound([0, height]);
@@ -81,17 +128,15 @@
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")")
             .attr("class", "grandparent");
-        
-        data = init(1957)
-        main()
 
-        async function main(){
-            await sleep(2000)
-            changeYear('2018', data)
-            await sleep(2000)
-            changeYear('2008', data)
-        }
-        
+        var dataTime = d3.range(0, 13).map(function (d) {
+            return new Date(2008 + d, 1, 1);
+        });
+
+
+        var data = init(years[0])
+
+        var yearData = data.then( d =>  {return d.filter(d2 => d2.Year == document.getElementById("currYear").textContent).sort((a, b) => a.AbjWeight - b.AdjWeight)})
 
         async function init(year) {
             data = await d3.csv('./data/CompanyDetail.csv')
@@ -104,15 +149,44 @@
                 .data(root.children)
                 .enter()
                 .append("g")
-                .attr("transform", d => `translate(${d.x0},${d.y0})`);
             cells = leaf.append("rect")
                 .attr("fill-opacity", 0.6)
                 .attr("x", d => d.x0 * width)
                 .attr("y", d => d.y0 * height)
+                .attr("stroke-width", d => typeof d.children !== 'undefined' ? "3" : "0")
+                .attr("stroke", "white")
                 .attr("width", d => (d.x1 - d.x0) * width)
                 .attr("height", d => (d.y1 - d.y0) * height)
                 .attr("fill", d => color(d.data.id))
+                .attr("id", d => d.data.id)
+                .on("mouseover", function (d) {
+                    if (document.getElementById("currYear").textContent > 2006) {
+                        var xPosition = parseFloat(d3.select(this).attr("x")) + 30;
+                        var yPosition = parseFloat(d3.select(this).attr("y")) + 30;
+                        u = d3.select("#tooltip")
+                            .style("left", xPosition + "px")
+                            .style("top", yPosition + "px")
+                            .select("#companyTable")
+                            .selectAll("li")
+                            .data(d.children.sort((a, b) => a.data.data.AdjWeight - b.data.data.AdjWeight).reverse().slice(0, 10))
+                        
+                        console.log(d.children)
+                        u.exit().remove()
+                        u.enter()
+                            .append("li")
+                            .text(d => d.data.data.Ticker + ": " +String(Math.round(d.data.data.AdjWeight*100)/100) + "%");
+                        
+                        u.text(d => d.data.data.Ticker + ": " +String(Math.round(d.data.data.AdjWeight*100)/100) + "%")
+                        
+                        d3.select("#tooltip").classed("hidden", false);
 
+                    }
+
+                }).on("mouseout", function () {
+
+                    d3.select("#tooltip").classed("hidden", true);
+
+                })
             leaf.append("text")
                 .attr("class", "name")
                 .attr("x", d => (d.x0 + (d.x1 - d.x0) / 8) * width)
@@ -130,12 +204,76 @@
                 .style("fill", "black")
                 .attr("font-size", "12px")
 
+            updateText()
+
             return data
 
         }
 
-        async function changeYear(year, data) {
-            //data.then(function(data){
+        async function incrementAndSetYear() {
+            var index = years.indexOf(document.getElementById("currYear").textContent)
+            if (years[index + 1] > 2006) {
+
+                document.getElementById("nextYear").remove()
+                var sliderTime = d3
+                    .sliderBottom()
+                    .min(d3.min(dataTime))
+                    .max(d3.max(dataTime))
+                    .step(1000 * 60 * 60 * 24 * 365)
+                    .width(document.getElementById("slider-time").clientWidth - 50)
+                    .tickFormat(d3.timeFormat('%Y'))
+                    .tickValues(dataTime)
+                    .default(new Date(2006, 1, 1))
+                    .on('onchange', val => {
+                        d3.select('p#currYear').text(d3.timeFormat('%Y')(val));
+                        document.getElementById("currYear").textContent = d3.timeFormat('%Y')(val)
+                        changeYear(d3.timeFormat('%Y')(val))
+                    });
+
+                var gTime = d3
+                    .select('div#slider-time')
+                    .append('svg')
+                    .attr('width', document.getElementById("slider-time").clientWidth)
+                    .attr('height', 100)
+                    .append('g')
+                    .attr('transform', 'translate(30,30)');
+                gTime.call(sliderTime);
+                d3.select('p#currYear').text(d3.timeFormat('%Y')(sliderTime.value()));
+                document.getElementById("currYear").textContent = years[index + 1]
+                changeYear(years[index + 1])
+                updateText()
+            }
+            else {
+                document.getElementById("currYear").textContent = years[index + 1]
+                document.getElementById("nextYear").textContent = "Next: " + years[index + 2]
+                changeYear(years[index + 1])
+                updateText()
+
+
+            }
+
+
+
+
+        }
+
+        async function updateText() {
+            textData = await d3.csv('./data/yearText.csv')
+            d3.select('#yearContent')
+                .selectAll("div").remove()
+            d3.select('#yearContent')
+                .selectAll("text").remove()
+            d3.select('#yearContent')
+                .selectAll("br").remove()
+
+            u = d3.select('#yearContent')
+                .selectAll("div")
+                .data(textData.filter(d => d.Year == document.getElementById("currYear").textContent))
+                .enter().append("div")
+                .append("p").text(d => d.Text)
+        }
+
+        async function changeYear(year) {
             console.log(data)
             const dataStrat2 = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
             const root2 = treemap(dataStrat2);
@@ -148,6 +286,8 @@
                 .data(root2.children)
                 .transition().duration(2000)
                 .attr("fill-opacity", 0.6)
+                .attr("stroke-width", d => typeof d.children !== 'undefined' ? "3" : "0")
+                .attr("stroke", "white")
                 .attr("x", d => d.x0 * width)
                 .attr("y", d => d.y0 * height)
                 .attr("width", d => (d.x1 - d.x0) * width)
@@ -176,15 +316,9 @@
                 .text(d => Math.floor(d.value) + "%")
                 .style("fill", "black")
                 .attr("font-size", "12px")
-            //})
-            
-        }
 
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
 
-        console.log(data)
+        }
         var stratify = d3.stratify()
             .parentId(function (d) {
                 return d.Parent;
