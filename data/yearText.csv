@@ -1,12 +1,12 @@
 Year,Text
 1957,The index was expanded to its current 500 companies and was renamed the S&P 500 Stock Composite Index
-1957,"The initial list only included three industries: Industrials, Utilities, and Rails"
+1957,"The initial list only included three Sectors: Industrials, Utilities, and Rails"
 1957,The largest company at the time was Standard Oil of New Jersey with an $11B Market Cap
 1976,Financial companies are broken out to be their own Sector, and make up 6.1% of the Index
 1976,Rails are renamed to Transportation
-1976,Industrials still dominate the US economy
-1976,IBM is the largest US Economy with a market cap of $42 billion
+1976,Industrials is still the largest Sector, accounting for 85% of the S&P 500
+1976,IBM is the largest company with a market cap of $42 billion
 2001,Global Industry Classification divides the US Economy into 10 Sectors
 2001,General Electric is the largest US company with a market cap of $398 billion
-2008,Explore how the make-up of the US economy has changed since 2008 by dragging the slider on the bottom
-2008,Hover over any sector to see the largest companies
+2007,Explore how the make-up of the US economy has changed since 2008 by dragging the slider on the bottom
+2007,Hover over any sector to see the largest companies

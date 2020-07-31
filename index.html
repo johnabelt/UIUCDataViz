@@ -34,7 +34,9 @@
 
                 </div>
                 <div class="col-lg">
-                    <div id="slider-time"></div>
+                    <div class="range-wrap" id="range-wrap">
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -71,25 +73,53 @@
             font-size: 16px;
             line-height: 20px;
         }
+
+        .range-wrap {
+            position: relative;
+            margin: 0 auto 3rem;
+            display: none;
+        }
+
+        .range {
+            width: 100%;
+        }
+
+        .bubble {
+            background: gray;
+            color: white;
+            padding: 4px 12px;
+            position: absolute;
+            border-radius: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 20px;
+        }
+
+        .bubble::after {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: gray;
+            top: 10px;
+            left: 50%;
+        }
+
+        body {
+            margin: 2rem;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
         crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
         crossorigin="anonymous"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore.js">
-    </script>
-    <script src="https://unpkg.com/d3-simple-slider"></script>
     <script>
 
-        var years = ['1957', '1976', '2001', '2008', '2008', '2009']
+        var years = ['1957', '1976', '2001', '2007', '2008', '2009']
         var currYear = years[0]
-        var isFinalSlide = false
 
         var margin = { top: 10, right: 10, bottom: 10, left: 10 },
             width = document.getElementById("my_dataviz").clientWidth - margin.left - margin.right,
@@ -136,14 +166,12 @@
 
         var data = init(years[0])
 
-        var yearData = data.then( d =>  {return d.filter(d2 => d2.Year == document.getElementById("currYear").textContent).sort((a, b) => a.AbjWeight - b.AdjWeight)})
+        var yearData = data.then(d => { return d.filter(d2 => d2.Year == document.getElementById("currYear").textContent).sort((a, b) => a.AbjWeight - b.AdjWeight) })
 
         async function init(year) {
             data = await d3.csv('https://raw.githubusercontent.com/johnabelt/UIUCDataViz/master/data/CompanyDetail.csv')
-            console.log(data)
             dataStrat = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
             var root = treemap(dataStrat);
-            console.log(root)
 
             const leaf = grandparent.selectAll("g")
                 .data(root.children)
@@ -169,15 +197,13 @@
                             .select("#companyTable")
                             .selectAll("li")
                             .data(d.children.sort((a, b) => a.data.data.AdjWeight - b.data.data.AdjWeight).reverse().slice(0, 10))
-                        
-                        console.log(d.children)
                         u.exit().remove()
                         u.enter()
                             .append("li")
-                            .text(d => d.data.data.Ticker + ": " +String(Math.round(d.data.data.AdjWeight*100)/100) + "%");
-                        
-                        u.text(d => d.data.data.Ticker + ": " +String(Math.round(d.data.data.AdjWeight*100)/100) + "%")
-                        
+                            .text(d => d.data.data.Ticker + ": " + String(Math.round(d.data.data.AdjWeight * 100) / 100) + "%");
+
+                        u.text(d => d.data.data.Ticker + ": " + String(Math.round(d.data.data.AdjWeight * 100) / 100) + "%")
+
                         d3.select("#tooltip").classed("hidden", false);
 
                     }
@@ -215,33 +241,35 @@
             if (years[index + 1] > 2006) {
 
                 document.getElementById("nextYear").remove()
-                var sliderTime = d3
-                    .sliderBottom()
-                    .min(d3.min(dataTime))
-                    .max(d3.max(dataTime))
-                    .step(1000 * 60 * 60 * 24 * 365)
-                    .width(document.getElementById("slider-time").clientWidth - 50)
-                    .tickFormat(d3.timeFormat('%Y'))
-                    .tickValues(dataTime)
-                    .default(new Date(2006, 1, 1))
-                    .on('onchange', val => {
-                        d3.select('p#currYear').text(d3.timeFormat('%Y')(val));
-                        document.getElementById("currYear").textContent = d3.timeFormat('%Y')(val)
-                        changeYear(d3.timeFormat('%Y')(val))
-                    });
 
-                var gTime = d3
-                    .select('div#slider-time')
-                    .append('svg')
-                    .attr('width', document.getElementById("slider-time").clientWidth)
-                    .attr('height', 100)
-                    .append('g')
-                    .attr('transform', 'translate(30,30)');
-                gTime.call(sliderTime);
-                d3.select('p#currYear').text(d3.timeFormat('%Y')(sliderTime.value()));
                 document.getElementById("currYear").textContent = years[index + 1]
+
+                document.getElementById("range-wrap").style.display = "inline";
                 changeYear(years[index + 1])
                 updateText()
+                let range = document.createElement("input")
+                range.setAttribute("type", "range")
+                range.setAttribute("class", "range")
+                range.setAttribute("min", "2007")
+                range.setAttribute("max", "2020")
+                range.setAttribute("step", "1")
+                range.setAttribute("value", "2007")
+                let bubble = document.createElement("output")
+                bubble.setAttribute("class", "bubble")
+                let rw = document.getElementById("range-wrap")
+                rw.appendChild(range)
+                rw.appendChild(bubble)
+
+                const allRanges = document.querySelectorAll(".range-wrap");
+                allRanges.forEach(wrap => {
+                    const range = wrap.querySelector(".range");
+                    const bubble = wrap.querySelector(".bubble");
+
+                    range.addEventListener("input", () => {
+                        setBubble(range, bubble);
+                    });
+                    setBubble(range, bubble);
+                });
             }
             else {
                 document.getElementById("currYear").textContent = years[index + 1]
@@ -274,14 +302,9 @@
         }
 
         async function changeYear(year) {
-            console.log(data)
             const dataStrat2 = stratify(data.filter(row => row.Year == String(year) || row.Year == ''))
             const root2 = treemap(dataStrat2);
-            console.log(root2)
-            console.log("hey")
-            //grandparent.selectAll("g")
-            //    .data(root2.children)
-            //    .exit()
+
             var rects = grandparent.selectAll("rect")
                 .data(root2.children)
                 .transition().duration(2000)
@@ -331,6 +354,23 @@
             (d3.hierarchy(data)
                 .sum(d => parseFloat(d.data.AdjWeight))
                 .sort((a, b) => b.id - a.id))
+
+
+
+        function setBubble(range, bubble) {
+            const val = range.value;
+            const min = range.min ? range.min : 0;
+            const max = range.max ? range.max : 100;
+            const newVal = Number(((val - min) * 100) / (max - min));
+            bubble.innerHTML = val;
+            document.getElementById("currYear").textContent = val;
+            changeYear(val)
+
+
+
+            // Sorta magic numbers based on size of the native UI thumb
+            bubble.style.left = `calc(${newVal}% + (${8 - newVal * 0.15}px))`;
+        }
 
 
     </script>
