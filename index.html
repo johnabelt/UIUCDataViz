@@ -11,9 +11,13 @@
 <body>
 
     <div class="container-md">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h1">S&P 500: A History of the US Economy</p>
+        <div class=" justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h1">S&P 500: A History of the US Economy</h1>
+            <p fontStyle="italic">The S&P 500 is a stock index of 500 companies listed on US stock exchanges. The index is
+                considered a good representation of the composition of the US stock market, and it is updated regularly as
+                the US market changes. This visualization uses the S&P 500, and its component
+                sectors to highlight how the US economy has transformed since the inception of the index in 1957</p>
+
         </div>
         <div class="row">
             <div class="col-lg-3 border-right bg-light flex-column d-flex">
@@ -44,7 +48,7 @@
     </div>
     <style type="text/css">
         rect:hover {
-            fill: orange;
+            fill: gray;
         }
 
         #tooltip {
@@ -359,8 +363,8 @@
 
         function setBubble(range, bubble) {
             const val = range.value;
-            const min = range.min ? range.min : 0;
-            const max = range.max ? range.max : 100;
+            const min = range.min;
+            const max = range.max;
             const newVal = Number(((val - min) * 100) / (max - min));
             bubble.innerHTML = val;
             document.getElementById("currYear").textContent = val;
